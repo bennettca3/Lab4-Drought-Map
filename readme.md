@@ -8,7 +8,7 @@ Each state is shaded by the total percentage of its area in moderate drought.  D
 
 Features:
 
-Choropleth map: six classes on a sequential yellow-orange-red color ramp (ColorBrewer YlOrRd)
+Choropleth map: five classes on a sequential yellow-orange-red color ramp (ColorBrewer YlOrRd)
 Hover: highlights a state and shows its name and total moderate drought percentage in the info panel.
 Click: zooms to the selected state.
 Legend: class ranges with units.

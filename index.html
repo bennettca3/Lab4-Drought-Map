@@ -200,7 +200,7 @@
     }
 
     //3.4 Assign the geojson data path, style option and onEachFeature option, then add the geojson layer to the map.
-    geojson = L.geoJson.ajax("us_drought.geojson", {
+    geojson = L.geoJson.ajax("assets/us_drought.geojson", {
       style: style,
       onEachFeature: onEachFeature
     }).addTo(map);

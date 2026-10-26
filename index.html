@@ -104,7 +104,7 @@
     <h2>About this map</h2>
     <p>This interactive web map shows the extent of moderate drought across the United States for the week of October 13, 2026.
       Each state is shaded by the percentage of its area in moderate drought (U.S. Drought Monitor category D1), using
-      six classes and a sequential yellow-orange-red color ramp from ColorBrewer. Hovering over a state highlights it
+      five classes and a sequential yellow-orange-red color ramp from ColorBrewer. Hovering over a state highlights it
       and shows its name and drought percentage in an info panel, and clicking a state zooms to it. The map was built
       with Leaflet, leaflet-ajax, chroma.js, and jQuery, with drought data from the U.S. Drought Monitor (National
       Drought Mitigation Center, USDA, and NOAA).</p>
@@ -120,7 +120,7 @@
 
     // 2. Create the choropleth map with interactive functions.
     // Class breaks: six classes, from 0-10% up to 80-100%.
-    var grades = [0, 10, 20, 40, 60, 80];
+    var grades = [0, 20, 40, 60, 80];
 
     // Now determine the color ramp.
     var colors = chroma.scale('YlOrRd').mode('lab').colors(grades.length);

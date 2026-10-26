@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>U.S. Drought, Week of Oct. 13, 2026</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.7.0/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.3.4/chroma.min.js"></script>
+
+  <style>
+    html {
+      height: 100%;
+    }
+
+    body {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Info Panel (upper-right corner). */
+    .info {
+      z-index: 1000;
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      padding: 6px 8px;
+      font: 14px Arial, Helvetica, sans-serif;
+      text-align: right;
+      background: white;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(128, 0, 38, 0.5);
+      border-radius: 12px;
+    }
+
+    .info h4 {
+      font-size: 16px;
+      margin: 0 0 5px;
+      color: #0F0C08;
+    }
+
+    /* Legend panel (lower-right corner). */
+    .legend {
+      z-index: 1000;
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      padding: 6px 8px;
+      font: 14px Arial, Helvetica, sans-serif;
+      background: white;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(128, 0, 38, 0.5);
+      border-radius: 12px;
+    }
+
+    .legend i {
+      width: 18px;
+      height: 16px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+    }
+
+    /* Description box (lower-left corner). */
+    .description {
+      z-index: 1000;
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 280px;
+      padding: 6px 8px;
+      font: 14px Arial, Helvetica, sans-serif;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(128, 0, 38, 0.5);
+      border-radius: 12px;
+    }
+
+    .description h2 {
+      font-size: 16px;
+      color: #0F0C08;
+    }
+
+    .description p {
+      line-height: 1.5;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div id='map'></div>
+  <div class='legend'></div>
+
+  <section class="description">
+    <h2>About this map</h2>
+    <p>This interactive web map shows the extent of moderate drought across the United States for the week of October 13, 2026.
+      Each state is shaded by the percentage of its area in moderate drought (U.S. Drought Monitor category D1), using
+      six classes and a sequential yellow-orange-red color ramp from ColorBrewer. Hovering over a state highlights it
+      and shows its name and drought percentage in an info panel, and clicking a state zooms to it. The map was built
+      with Leaflet, leaflet-ajax, chroma.js, and jQuery, with drought data from the U.S. Drought Monitor (National
+      Drought Mitigation Center, USDA, and NOAA).</p>
+  </section>
+
+  <script>
+    // 1. Create the map object and the base layer.
+    var map = L.map('map').setView([37.8, -96], 4);
+    var Esri_WorldGrayCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+      maxZoom: 16
+    }).addTo(map);
+
+    // 2. Create the choropleth map with interactive functions.
+    // Class breaks: six classes, from 0-10% up to 80-100%.
+    var grades = [0, 10, 20, 40, 60, 80];
+
+    // Now determine the color ramp.
+    var colors = chroma.scale('YlOrRd').mode('lab').colors(grades.length);
+    // I've set the color palette name 'YlOrRd' from ColorBrewer.
+    // This provides a sequential color palette from yellow to orange to red. 
+
+    // Get the color based on the class of the input value
+    function getColor(d) {
+      for (var i = 0; i < grades.length - 1; i++) {
+        if (d >= grades[i] && d < grades[i + 1]) return colors[i];
+      }
+      if (d >= grades[grades.length - 1]) return colors[grades.length - 1];
+    }
+
+
+    // Determine the style class based on the input feature
+    function style(feature) {
+      return {
+        weight: 1,
+        opacity: 1,
+        color: 'grey',
+        dashArray: '3',
+        fillOpacity: 0.8,
+        fillColor: getColor(feature.properties.D1)
+      };
+    }
+    // 3 Add the states file to the map
+    // 3.1 Declare an empty GeoJSON object
+    var geojson = null;
+
+    var info = L.control();
+
+    info.onAdd = function (map) {
+      this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"                
+      this.update();
+      return this._div;
+    };
+
+    // Update the control based on feature properties passed.
+    info.update = function (props) {
+      this._div.innerHTML = '<h4>Extent of the U.S. in Moderate Drought (D1), Week of Oct. 13, 2026</h4>' + (props ?
+        '<b>' + props.name + '</b><br />' + props.D1 + '% of area in moderate drought'
+        : 'Hover over a state');
+    };
+    info.addTo(map);
+
+    // 3.2.1 highlight a feature when the mouse hovers on it.
+    function highlightFeature(e) {
+      var layer = e.target;
+      layer.setStyle({
+        weight: 2,
+        opacity: 1,
+        color: '#f8f9f5',
+        fillOpacity: 0.95,
+      });
+      layer.bringToFront();
+      info.update(layer.feature.properties);
+    }
+    // 3.2.2 Zoom to the highlighted feature when the mouse clicks it.            
+    function zoomToFeature(e) {
+      map.fitBounds(e.target.getBounds());
+    }
+
+    // 3.2.3 Reset the hightlighted feature when the mouse is out of its region.
+    function resetHighlight(e) {
+      geojson.resetStyle(e.target);
+      info.update();  
+    }
+
+    // 3.3 Add these events to the layer object.            
+    function onEachFeature(feature, layer) {
+      layer.on({
+        mouseover: highlightFeature,
+        click: zoomToFeature,
+        mouseout: resetHighlight
+      });
+    }
+
+    //3.4 Assign the geojson data path, style option and onEachFeature option, then add the geojson layer to the map.
+    geojson = L.geoJson.ajax("assets/us_drought.geojson", {
+      style: style,
+      onEachFeature: onEachFeature
+    }).addTo(map);
+
+    // 4. Create the legend
+    var labels = [];
+
+    for (var i = 0; i < grades.length - 1; i++) {
+      labels.push('<i style="background:' + colors[i] + '"></i> ' + grades[i] + ' - ' + grades[i + 1] + '%');
+    }
+
+    labels.push('<i style="background:' + colors[grades.length - 1] + '"></i> ' + grades[grades.length - 1] + ' - 100%');
+    $(".legend").html('<b>% of area in D1</b><br>' + labels.join('<br>'));
+
+    // 5. Create the credits
+
+    map.attributionControl.addAttribution('Drought data &copy; <a href="https://droughtmonitor.unl.edu/">U.S. Drought Monitor</a> | This map is made by Chris Bennett');
+
+  </script>
+</body>
+
+</html>
